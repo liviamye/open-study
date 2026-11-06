@@ -11,3 +11,4 @@
 - [DeepSeek - www.deepseek.com](https://www.deepseek.com/) - 首页就有提问框，点“和 DeepSeek 对话”进网页版聊天
 - [在线客服（QQ）](https://aganlaile.github.io/dbbd-study/qq.html)
 - [留言板](https://aganlaile.github.io/dbbd-study/liuyan.html) - 纯文字对话，不用安装、不用注册，取个昵称就能打字
+- [大模型对话](https://aganlaile.github.io/dbbd-study/chat.html) - 调用大模型 API 对话，不保留历史记录，需自填 API Key（另有免 key 免费通道可先试）
