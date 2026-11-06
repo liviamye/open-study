@@ -10,3 +10,4 @@
 - [腾讯元宝 - yuanbao.tencent.com](https://yuanbao.tencent.com/) - 腾讯自研模型，游客直接发送提问（会先弹登录框，关掉后可用临时对话）
 - [DeepSeek - www.deepseek.com](https://www.deepseek.com/) - 首页就有提问框，点“和 DeepSeek 对话”进网页版聊天
 - [在线客服（QQ）](https://aganlaile.github.io/dbbd-study/qq.html)
+- [留言板](https://aganlaile.github.io/dbbd-study/liuyan.html) - 纯文字对话，不用安装、不用注册，取个昵称就能打字
