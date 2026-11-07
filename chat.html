@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿﻿﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
@@ -37,7 +37,7 @@ button{padding:10px 16px;border:0;border-radius:8px;font-size:15px;cursor:pointe
 <label for="provider">模型服务</label>
 <select id="provider">
 <option value="pollinations" selected>Pollinations 免费（免 key，可直接用）</option>
-<option value="agnes-cn">Agnes AI 中国站（需 API Key）</option>
+<option value="agnes-cn">Agnes AI 中国站（免 key，经代理）</option>
 <option value="deepseek">DeepSeek（需 API Key）</option>
 <option value="kimi">Kimi / Moonshot（需 API Key）</option>
 <option value="openai">OpenAI（需 API Key）</option>
@@ -48,13 +48,13 @@ button{padding:10px 16px;border:0;border-radius:8px;font-size:15px;cursor:pointe
 <label for="model">模型</label>
 <input id="model" value="openai">
 <label for="key">API Key（只发给你选的模型服务，不写进仓库）</label>
-<input id="key" type="password" placeholder="Pollinations 免费通道不用填" autocomplete="off">
+<input id="key" type="password" placeholder="Pollinations 和 Agnes 免 key，其他服务需填" autocomplete="off">
 <label><input type="checkbox" id="remember" style="width:auto"> 记住密钥到本浏览器（不勾就只保存在本页内存，刷新就忘）</label>
-<p class="note">提示：密钥和对话都不存在仓库里。Agnes 中国站 Key 只对应中国站地址 https://api.agnes-ai.cn/v1（备选 https://apihub.agnes-ai.cn/v1），国际站 Key 不通用，报 401 时先核对 Key 和地址是否对应同一站；免费模型可选 agnes-3.0-flash 或 agnes-2.5-flash。DeepSeek / Kimi / OpenAI 官方接口有的会在浏览器里被 CORS 拦住，报错时会直接显示出来，那时可改用 Pollinations 免费通道先试，或把 API 地址换成你自己的中转地址。</p>
+<p class="note">提示：密钥和对话都不存在仓库里。Agnes 已通过 Cloudflare Worker 代理接入，不用填 key（密钥加密存在 Worker 环境变量里，代理只接受来自本站的请求）。Pollinations 免费通道也不用填 key。DeepSeek / Kimi / OpenAI 需自填 Key，且官方接口有的会在浏览器里被 CORS 拦住，报错时会直接显示出来，那时可改用免 key 通道先试，或把 API 地址换成你自己的中转地址。</p>
 <p class="back"><a href="index.html">返回导航</a> · <a href="https://github.com/liviamye/open-study">返回 open-study</a></p>
 <script>
 var providers={
- "agnes-cn":{base:"https://api.agnes-ai.cn/v1",model:"agnes-3.0-flash",needsKey:true},
+ "agnes-cn":{base:"https://agnes-proxy.liviamye.workers.dev/v1",model:"agnes-3.0-flash",needsKey:false},
  pollinations:{base:"",model:"openai",needsKey:false},
  deepseek:{base:"https://api.deepseek.com/v1",model:"deepseek-chat",needsKey:true},
  kimi:{base:"https://api.moonshot.cn/v1",model:"moonshot-v1-8k",needsKey:true},
@@ -81,5 +81,6 @@ document.getElementById("clear").addEventListener("click",function(){messages=[]
 </script>
 </body>
 </html>
+
 
 
