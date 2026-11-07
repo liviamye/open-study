@@ -28,28 +28,28 @@ button{padding:10px 16px;border:0;border-radius:8px;font-size:15px;cursor:pointe
 <body>
 <h1>大模型对话</h1>
 <p class="sub">不保留历史记录：对话只在当前页面内存里，刷新或点“清空对话”就没了。</p>
-<label for="provider">模型服务</label>
-<select id="provider">
-<option value="agnes-cn" selected>Agnes AI 中国站（需 API Key）</option>
-<option value="pollinations">Pollinations 免费（免 key，可先试）</option>
-<option value="deepseek">DeepSeek（需 API Key）</option>
-<option value="kimi">Kimi / Moonshot（需 API Key）</option>
-<option value="openai">OpenAI（需 API Key）</option>
-<option value="custom">自定义 OpenAI 兼容接口</option>
-</select>
-<label for="base">API 地址（Base URL）</label>
-<input id="base" value="https://api.agnes-ai.cn/v1">
-<label for="model">模型</label>
-<input id="model" value="agnes-3.0-flash">
-<label for="key">API Key（只发给你选的模型服务，不写进仓库）</label>
-<input id="key" type="password" placeholder="Agnes 中国站 Key，Pollinations 免费通道不用填" autocomplete="off">
-<label><input type="checkbox" id="remember" style="width:auto"> 记住密钥到本浏览器（不勾就只保存在本页内存，刷新就忘）</label>
 <div id="chat"></div>
 <div class="row">
 <input id="input" placeholder="输入问题，回车发送…" autocomplete="off">
 <button id="send">发送</button>
 <button id="clear">清空对话</button>
 </div>
+<label for="provider">模型服务</label>
+<select id="provider">
+<option value="pollinations" selected>Pollinations 免费（免 key，可直接用）</option>
+<option value="agnes-cn">Agnes AI 中国站（需 API Key）</option>
+<option value="deepseek">DeepSeek（需 API Key）</option>
+<option value="kimi">Kimi / Moonshot（需 API Key）</option>
+<option value="openai">OpenAI（需 API Key）</option>
+<option value="custom">自定义 OpenAI 兼容接口</option>
+</select>
+<label for="base">API 地址（Base URL）</label>
+<input id="base" value="">
+<label for="model">模型</label>
+<input id="model" value="openai">
+<label for="key">API Key（只发给你选的模型服务，不写进仓库）</label>
+<input id="key" type="password" placeholder="Pollinations 免费通道不用填" autocomplete="off">
+<label><input type="checkbox" id="remember" style="width:auto"> 记住密钥到本浏览器（不勾就只保存在本页内存，刷新就忘）</label>
 <p class="note">提示：密钥和对话都不存在仓库里。Agnes 中国站 Key 只对应中国站地址 https://api.agnes-ai.cn/v1（备选 https://apihub.agnes-ai.cn/v1），国际站 Key 不通用，报 401 时先核对 Key 和地址是否对应同一站；免费模型可选 agnes-3.0-flash 或 agnes-2.5-flash。DeepSeek / Kimi / OpenAI 官方接口有的会在浏览器里被 CORS 拦住，报错时会直接显示出来，那时可改用 Pollinations 免费通道先试，或把 API 地址换成你自己的中转地址。</p>
 <p class="back"><a href="index.html">返回导航</a> · <a href="https://github.com/liviamye/open-study">返回 open-study</a></p>
 <script>
@@ -62,6 +62,7 @@ var providers={
  custom:{base:"https://api.agnes-ai.cn/v1",model:"agnes-3.0-flash",needsKey:true}
 };
 var providerEl=document.getElementById("provider"),baseEl=document.getElementById("base"),modelEl=document.getElementById("model"),keyEl=document.getElementById("key"),rememberEl=document.getElementById("remember"),chatEl=document.getElementById("chat"),inputEl=document.getElementById("input");
+keyEl.style.display=providers[providerEl.value].needsKey?"":"none";
 var messages=[];
 try{var savedKey=localStorage.getItem("chat_api_key");if(savedKey){keyEl.value=savedKey;rememberEl.checked=true;}}catch(e){}
 providerEl.addEventListener("change",function(){var p=providers[providerEl.value];baseEl.value=p.base;modelEl.value=p.model;keyEl.style.display=p.needsKey?"":"none";});
