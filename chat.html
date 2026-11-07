@@ -1,4 +1,4 @@
-﻿﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
@@ -71,9 +71,10 @@ rememberEl.addEventListener("change",function(){try{if(rememberEl.checked){local
 function addMsg(role,text,cls){var d=document.createElement("div");d.className="msg "+(cls||role);var s=document.createElement("span");s.textContent=text;d.appendChild(s);chatEl.appendChild(d);chatEl.scrollTop=chatEl.scrollHeight;}
 function send(){var text=inputEl.value.trim();if(!text)return;var prov=providerEl.value,p=providers[prov];addMsg("user",text);messages.push({role:"user",content:text});inputEl.value="";addMsg("ai","思考中…");var thinking=chatEl.lastChild;
  if(prov==="pollinations"){fetch("https://text.pollinations.ai/"+encodeURIComponent(text)).then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.text();}).then(function(t){thinking.querySelector("span").textContent=t;messages.push({role:"assistant",content:t});}).catch(function(e){thinking.className="msg err";thinking.querySelector("span").textContent="出错了："+e.message;});return;}
- var key=keyEl.value.trim();if(!key){thinking.className="msg err";thinking.querySelector("span").textContent="请先填 API Key（Pollinations 免费通道不用填）。密钥只发给你选的模型服务，不写进仓库。";return;}
+ var key=keyEl.value.trim();if(!key&&p.needsKey){thinking.className="msg err";thinking.querySelector("span").textContent="请先填 API Key（Pollinations 和 Agnes 免 key 不用填）。密钥只发给你选的模型服务，不写进仓库。";return;}
  var base=baseEl.value.replace(/\/+$/,"");
- fetch(base+"/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},body:JSON.stringify({model:modelEl.value.trim(),messages:messages})}).then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error("HTTP "+r.status+" "+t.slice(0,300));});return r.json();}).then(function(j){var t=(j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||"（无返回内容）";thinking.querySelector("span").textContent=t;messages.push({role:"assistant",content:t});}).catch(function(e){thinking.className="msg err";var msg="出错了："+e.message;if(String(e.message).indexOf("Failed to fetch")>=0||String(e.message).indexOf("NetworkError")>=0){msg+="\n可能是浏览器跨域（CORS）被官方接口拦住了，可改用 Pollinations 免费通道先试，或把 API 地址换成你自己的中转地址。";}thinking.querySelector("span").textContent=msg;});
+ var hdrs={"Content-Type":"application/json"};if(key)hdrs["Authorization"]="Bearer "+key;
+ fetch(base+"/chat/completions",{method:"POST",headers:hdrs,body:JSON.stringify({model:modelEl.value.trim(),messages:messages})}).then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error("HTTP "+r.status+" "+t.slice(0,300));});return r.json();}).then(function(j){var t=(j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||"（无返回内容）";thinking.querySelector("span").textContent=t;messages.push({role:"assistant",content:t});}).catch(function(e){thinking.className="msg err";var msg="出错了："+e.message;if(String(e.message).indexOf("Failed to fetch")>=0||String(e.message).indexOf("NetworkError")>=0){msg+="\n可能是浏览器跨域（CORS）被官方接口拦住了，可改用 Pollinations 免费通道先试，或把 API 地址换成你自己的中转地址。";}thinking.querySelector("span").textContent=msg;});
 }
 document.getElementById("send").addEventListener("click",send);
 inputEl.addEventListener("keydown",function(e){if(e.key==="Enter")send();});
@@ -81,6 +82,7 @@ document.getElementById("clear").addEventListener("click",function(){messages=[]
 </script>
 </body>
 </html>
+
 
 
 
