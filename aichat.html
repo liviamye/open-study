@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
@@ -23,9 +23,26 @@ button{padding:10px 16px;border:0;border-radius:8px;font-size:15px;cursor:pointe
 #clear{background:#eee;color:#333}
 .note{font-size:13px;color:#666;text-align:left}
 .back{text-align:center;margin-top:16px}
+#lock{position:fixed;inset:0;background:#fff;z-index:99;display:none;align-items:center;justify-content:center}
+#lock .box{max-width:320px;width:90%;text-align:center}
+#lock input{margin:6px 0}
+#lockBtn{width:100%;background:#12b7f5;color:#fff;margin-top:6px}
+#lockMsg{color:#a00;font-size:14px;min-height:20px;margin:8px 0 0}
+#skip{background:none;border:0;color:#888;font-size:13px;text-decoration:underline;padding:6px;margin-top:10px}
 </style>
 </head>
 <body>
+<div id="lock">
+ <div class="box">
+  <h1>AI 学习</h1>
+  <p class="sub" id="lockTip">请输入访问密码</p>
+  <input id="pwd" type="password" placeholder="访问密码" autocomplete="off">
+  <input id="pwd2" type="password" placeholder="再输一次确认" style="display:none" autocomplete="off">
+  <button id="lockBtn">进入</button>
+  <p id="lockMsg"></p>
+  <button id="skip" style="display:none">服务器连不上？仍进入页面（仅 Pollinations 可用）</button>
+ </div>
+</div>
 <h1>AI 学习</h1>
 <div id="chat"></div>
 <div class="row">
@@ -48,13 +65,52 @@ button{padding:10px 16px;border:0;border-radius:8px;font-size:15px;cursor:pointe
 <label><input type="checkbox" id="remember" style="width:auto"> 记住密钥到本浏览器（不勾就只保存在本页内存，刷新就忘）</label>
 <p class="back"><a href="index.html">返回导航</a> · <a href="https://github.com/liviamye/open-study">返回 open-study</a></p>
 <script>
+var AGNES="https://data.mymap.cc.cd/agnes.php";
+var lockEl=document.getElementById("lock"),lockTip=document.getElementById("lockTip"),pwdEl=document.getElementById("pwd"),pwd2El=document.getElementById("pwd2"),lockBtn=document.getElementById("lockBtn"),lockMsg=document.getElementById("lockMsg"),skipBtn=document.getElementById("skip");
+var setupMode=false;
+function showLock(tip,msg){if(tip)lockTip.textContent=tip;lockMsg.textContent=msg||"";lockEl.style.display="flex";pwdEl.focus();}
+function hideLock(){lockEl.style.display="none";}
+function getToken(){try{return localStorage.getItem("aichat_token")||"";}catch(e){return"";}}
+function setToken(t){try{localStorage.setItem("aichat_token",t);}catch(e){}}
+function clearToken(){try{localStorage.removeItem("aichat_token");}catch(e){}}
+function postAuth(obj){return fetch(AGNES,{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify(obj)}).then(function(r){return r.json().catch(function(){return{};}).then(function(j){return{code:r.status,j:j};});});}
+function tryEnter(){
+ var pw=pwdEl.value;
+ lockMsg.textContent="";
+ if(setupMode){
+  if(pw.length<6){lockMsg.textContent="密码至少 6 位";return;}
+  if(pw!==pwd2El.value){lockMsg.textContent="两次输入不一致";return;}
+  lockBtn.disabled=true;lockMsg.textContent="设置中…";
+  postAuth({action:"setup",password:pw}).then(function(r){
+   lockBtn.disabled=false;
+   if(r.code===200&&r.j.token){setToken(r.j.token);hideLock();}
+   else if(r.code===409){lockMsg.textContent="密码已被设置过，请直接登录";setupMode=false;pwd2El.style.display="none";lockBtn.textContent="进入";lockTip.textContent="请输入访问密码";}
+   else{lockMsg.textContent="设置失败："+(r.j.error||("HTTP "+r.code));}
+  }).catch(function(e){lockBtn.disabled=false;lockMsg.textContent="连不上服务器："+e.message;});
+ }else{
+  if(!pw){lockMsg.textContent="请输入密码";return;}
+  lockBtn.disabled=true;lockMsg.textContent="验证中…";
+  postAuth({action:"login",password:pw}).then(function(r){
+   lockBtn.disabled=false;
+   if(r.code===200&&r.j.token){setToken(r.j.token);hideLock();}
+   else if(r.code===401){lockMsg.textContent="密码错误";pwdEl.select();}
+   else{lockMsg.textContent="服务器返回异常：HTTP "+r.code;}
+  }).catch(function(e){lockBtn.disabled=false;lockMsg.textContent="连不上服务器："+e.message;skipBtn.style.display="";});
+ }
+}
+lockBtn.addEventListener("click",tryEnter);
+pwdEl.addEventListener("keydown",function(e){if(e.key==="Enter")tryEnter();});
+pwd2El.addEventListener("keydown",function(e){if(e.key==="Enter")tryEnter();});
+skipBtn.addEventListener("click",hideLock);
+fetch(AGNES+"?auth=status").then(function(r){return r.json();}).then(function(j){
+ if(!j.set){setupMode=true;pwd2El.style.display="";lockBtn.textContent="设置并进入";showLock("首次使用，请设置访问密码（至少 6 位）");}
+ else if(getToken()){hideLock();}
+ else{showLock("请输入访问密码");}
+}).catch(function(e){showLock("连不上密码服务器","网络错误："+e.message);skipBtn.style.display="";});
+
 var providers={
- "agnes-cn":{base:"https://data.mymap.cc.cd/agnes.php",model:"agnes-3.0-flash",needsKey:false,raw:true},
- pollinations:{base:"",model:"openai",needsKey:false},
- deepseek:{base:"https://api.deepseek.com/v1",model:"deepseek-chat",needsKey:true},
- kimi:{base:"https://api.moonshot.cn/v1",model:"moonshot-v1-8k",needsKey:true},
- openai:{base:"https://api.openai.com/v1",model:"gpt-4o-mini",needsKey:true},
- custom:{base:"https://api.agnes-ai.cn/v1",model:"agnes-3.0-flash",needsKey:true}
+ "agnes-cn":{base:AGNES,model:"agnes-3.0-flash",needsKey:false,raw:true},
+ pollinations:{base:"",model:"openai",needsKey:false}
 };
 var providerEl=document.getElementById("provider"),baseEl=document.getElementById("base"),modelEl=document.getElementById("model"),keyEl=document.getElementById("key"),rememberEl=document.getElementById("remember"),chatEl=document.getElementById("chat"),inputEl=document.getElementById("input");
 keyEl.style.display=providers[providerEl.value].needsKey?"":"none";baseEl.value=providers[providerEl.value].base;modelEl.value=providers[providerEl.value].model;
@@ -69,7 +125,8 @@ function send(){var text=inputEl.value.trim();if(!text)return;var prov=providerE
  var key=keyEl.value.trim();if(!key&&p.needsKey){thinking.className="msg err";thinking.querySelector("span").textContent="请先填 API Key（Pollinations 和 Agnes 免 key 不用填）。密钥只发给你选的模型服务，不写进仓库。";return;}
  var base=baseEl.value.replace(/\/+$/,"");
  var hdrs=p.raw?{"Content-Type":"text/plain"}:{"Content-Type":"application/json"};if(key)hdrs["Authorization"]="Bearer "+key;
- fetch((p.raw?base:base+"/chat/completions"),{method:"POST",headers:hdrs,body:JSON.stringify({model:modelEl.value.trim(),messages:messages})}).then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error("HTTP "+r.status+" "+t.slice(0,300));});return r.json();}).then(function(j){var t=(j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||"（无返回内容）";thinking.querySelector("span").textContent=t;messages.push({role:"assistant",content:t});}).catch(function(e){thinking.className="msg err";var msg="出错了："+e.message;if(String(e.message).indexOf("Failed to fetch")>=0||String(e.message).indexOf("NetworkError")>=0){msg=base.indexOf("workers.dev")>=0?"出错了：连不上代理（workers.dev 在国内被墙）。开代理即可使用 Agnes；不开代理可先用 Pollinations 免费通道。":"出错了：连不上 Agnes 代理（"+base.replace(/https?:\/\//,"")+"）。若刚绑定域名，DNS 可能还没生效，稍等几分钟到几小时再试；开代理也可用。";}thinking.querySelector("span").textContent=msg;});
+ var bodyObj={model:modelEl.value.trim(),messages:messages};if(prov==="agnes-cn")bodyObj.token=getToken();
+ fetch((p.raw?base:base+"/chat/completions"),{method:"POST",headers:hdrs,body:JSON.stringify(bodyObj)}).then(function(r){if(r.status===401){clearToken();showLock("登录已过期，请重新输入密码");throw new Error("登录已失效，请重新输入访问密码");}if(!r.ok)return r.text().then(function(t){throw new Error("HTTP "+r.status+" "+t.slice(0,300));});return r.json();}).then(function(j){var t=(j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||"（无返回内容）";thinking.querySelector("span").textContent=t;messages.push({role:"assistant",content:t});}).catch(function(e){thinking.className="msg err";var msg="出错了："+e.message;if(String(e.message).indexOf("Failed to fetch")>=0||String(e.message).indexOf("NetworkError")>=0){msg="出错了：连不上 Agnes 代理（"+base.replace(/https?:\/\//,"")+"）。可能是网络线路问题，稍后再试。";}thinking.querySelector("span").textContent=msg;});
 }
 document.getElementById("send").addEventListener("click",send);
 inputEl.addEventListener("keydown",function(e){if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}});
@@ -78,9 +135,3 @@ document.getElementById("clear").addEventListener("click",function(){messages=[]
 </script>
 </body>
 </html>
-
-
-
-
-
-
