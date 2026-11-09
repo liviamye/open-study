@@ -1,0 +1,90 @@
+﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI 学习 - open-study</title>
+<style>
+body{font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:640px;margin:0 auto;padding:24px 16px;color:#222;line-height:1.6}
+h1{font-size:22px;text-align:center;margin:0 0 4px}
+.sub{text-align:center;color:#555;font-size:14px;margin:0 0 16px}
+label{display:block;font-size:14px;margin:10px 0 4px}
+select,input{width:100%;box-sizing:border-box;padding:10px;border:1px solid #ccc;border-radius:8px;font-size:15px}
+#chat{border:1px solid #ddd;border-radius:12px;height:380px;overflow-y:auto;padding:12px;margin:16px 0;background:#fafafa}
+.msg{margin:0 0 12px;white-space:pre-wrap;word-break:break-word}
+.msg.user{text-align:right}
+.msg.user span{display:inline-block;background:#12b7f5;color:#fff;padding:8px 12px;border-radius:12px;max-width:90%;text-align:left}
+.msg.ai span{display:inline-block;background:#fff;border:1px solid #ddd;padding:8px 12px;border-radius:12px;max-width:90%}
+.msg.err span{display:inline-block;background:#fff0f0;border:1px solid #f0c0c0;color:#a00;padding:8px 12px;border-radius:12px;max-width:90%}
+.row{display:flex;gap:8px}
+#input{flex:1}
+button{padding:10px 16px;border:0;border-radius:8px;font-size:15px;cursor:pointer}
+#send{background:#12b7f5;color:#fff}
+#clear{background:#eee;color:#333}
+.note{font-size:13px;color:#666;text-align:left}
+.back{text-align:center;margin-top:16px}
+</style>
+</head>
+<body>
+<h1>AI 学习</h1>
+<div id="chat"></div>
+<div class="row">
+<input id="input" placeholder="输入问题，回车发送…" autocomplete="off">
+<button id="send">发送</button>
+<button id="clear">清空对话</button>
+</div>
+ <p class="sub">不保留历史记录：对话只在当前页面内存里，刷新或点“清空对话”就没了。</p>
+<label for="provider">模型服务</label>
+<select id="provider">
+<option value="pollinations" selected>Pollinations 免费（免 key，可直接用）</option>
+<option value="agnes-cn">Agnes AI 中国站（免 key，经代理）</option>
+<option value="deepseek">DeepSeek（需 API Key）</option>
+<option value="kimi">Kimi / Moonshot（需 API Key）</option>
+<option value="openai">OpenAI（需 API Key）</option>
+<option value="custom">自定义 OpenAI 兼容接口</option>
+</select>
+<label for="base">API 地址（Base URL）</label>
+<input id="base" value="">
+<label for="model">模型</label>
+<input id="model" value="openai">
+<label for="key">API Key（只发给你选的模型服务，不写进仓库）</label>
+<input id="key" type="password" placeholder="Pollinations 和 Agnes 免 key，其他服务需填" autocomplete="off">
+<label><input type="checkbox" id="remember" style="width:auto"> 记住密钥到本浏览器（不勾就只保存在本页内存，刷新就忘）</label>
+<p class="note">提示：密钥和对话都不存在仓库里。Agnes 已通过自有服务器代理（data.mymap.cc.cd）接入，不用填 key（密钥只存在服务器端 PHP 里，代理只接受来自本站的请求）。Pollinations 免费通道也不用填 key。DeepSeek / Kimi / OpenAI 需自填 Key，且官方接口有的会在浏览器里被 CORS 拦住，报错时会直接显示出来，那时可改用免 key 通道先试，或把 API 地址换成你自己的中转地址。</p>
+<p class="back"><a href="index.html">返回导航</a> · <a href="https://github.com/liviamye/open-study">返回 open-study</a></p>
+<script>
+var providers={
+ "agnes-cn":{base:"https://data.mymap.cc.cd/agnes.php",model:"agnes-3.0-flash",needsKey:false,raw:true},
+ pollinations:{base:"",model:"openai",needsKey:false},
+ deepseek:{base:"https://api.deepseek.com/v1",model:"deepseek-chat",needsKey:true},
+ kimi:{base:"https://api.moonshot.cn/v1",model:"moonshot-v1-8k",needsKey:true},
+ openai:{base:"https://api.openai.com/v1",model:"gpt-4o-mini",needsKey:true},
+ custom:{base:"https://api.agnes-ai.cn/v1",model:"agnes-3.0-flash",needsKey:true}
+};
+var providerEl=document.getElementById("provider"),baseEl=document.getElementById("base"),modelEl=document.getElementById("model"),keyEl=document.getElementById("key"),rememberEl=document.getElementById("remember"),chatEl=document.getElementById("chat"),inputEl=document.getElementById("input");
+keyEl.style.display=providers[providerEl.value].needsKey?"":"none";
+var messages=[];
+try{var savedKey=localStorage.getItem("chat_api_key");if(savedKey){keyEl.value=savedKey;rememberEl.checked=true;}}catch(e){}
+providerEl.addEventListener("change",function(){var p=providers[providerEl.value];baseEl.value=p.base;modelEl.value=p.model;keyEl.style.display=p.needsKey?"":"none";});
+keyEl.addEventListener("change",function(){try{if(rememberEl.checked){localStorage.setItem("chat_api_key",keyEl.value);}else{localStorage.removeItem("chat_api_key");}}catch(e){}});
+rememberEl.addEventListener("change",function(){try{if(rememberEl.checked){localStorage.setItem("chat_api_key",keyEl.value);}else{localStorage.removeItem("chat_api_key");}}catch(e){}});
+function addMsg(role,text,cls){var d=document.createElement("div");d.className="msg "+(cls||role);var s=document.createElement("span");s.textContent=text;d.appendChild(s);chatEl.appendChild(d);chatEl.scrollTop=chatEl.scrollHeight;}
+function send(){var text=inputEl.value.trim();if(!text)return;var prov=providerEl.value,p=providers[prov];addMsg("user",text);messages.push({role:"user",content:text});inputEl.value="";addMsg("ai","思考中…");var thinking=chatEl.lastChild;
+ if(prov==="pollinations"){fetch("https://text.pollinations.ai/"+encodeURIComponent(text)).then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.text();}).then(function(t){thinking.querySelector("span").textContent=t;messages.push({role:"assistant",content:t});}).catch(function(e){thinking.className="msg err";thinking.querySelector("span").textContent="出错了："+e.message;});return;}
+ var key=keyEl.value.trim();if(!key&&p.needsKey){thinking.className="msg err";thinking.querySelector("span").textContent="请先填 API Key（Pollinations 和 Agnes 免 key 不用填）。密钥只发给你选的模型服务，不写进仓库。";return;}
+ var base=baseEl.value.replace(/\/+$/,"");
+ var hdrs=p.raw?{"Content-Type":"text/plain"}:{"Content-Type":"application/json"};if(key)hdrs["Authorization"]="Bearer "+key;
+ fetch((p.raw?base:base+"/chat/completions"),{method:"POST",headers:hdrs,body:JSON.stringify({model:modelEl.value.trim(),messages:messages})}).then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error("HTTP "+r.status+" "+t.slice(0,300));});return r.json();}).then(function(j){var t=(j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||"（无返回内容）";thinking.querySelector("span").textContent=t;messages.push({role:"assistant",content:t});}).catch(function(e){thinking.className="msg err";var msg="出错了："+e.message;if(String(e.message).indexOf("Failed to fetch")>=0||String(e.message).indexOf("NetworkError")>=0){msg=base.indexOf("workers.dev")>=0?"出错了：连不上代理（workers.dev 在国内被墙）。开代理即可使用 Agnes；不开代理可先用 Pollinations 免费通道。":"出错了：连不上 Agnes 代理（"+base.replace(/https?:\/\//,"")+"）。若刚绑定域名，DNS 可能还没生效，稍等几分钟到几小时再试；开代理也可用。";}thinking.querySelector("span").textContent=msg;});
+}
+document.getElementById("send").addEventListener("click",send);
+inputEl.addEventListener("keydown",function(e){if(e.key==="Enter")send();});
+document.getElementById("clear").addEventListener("click",function(){messages=[];chatEl.innerHTML="";});
+</script>
+</body>
+</html>
+
+
+
+
+
+
